@@ -1,5 +1,7 @@
 # ⚽ AI Football Analyst - Databricks Community Edition
 
+![Dashboard del proyecto](assets/cda25435-283f-4777-ba35-e638223717de.jpeg)
+
 **Plataforma:** Databricks Community Edition (FREE tier)
 **Dataset:** English Premier League Stats 2021-2024 (Kaggle)
 **Usuario Databricks:** randryan308@gmail.com
