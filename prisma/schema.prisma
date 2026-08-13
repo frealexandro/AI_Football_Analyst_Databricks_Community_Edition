@@ -1,0 +1,434 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AIModel {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  developer         String
+  parameters        BigInt?
+  architecture      String?
+  contextLength     Int?
+  modalities        String[]
+  releaseDate       DateTime?
+  huggingFaceId     String?
+  license           String?
+  description       String?
+  
+  quantizations     ModelQuantization[]
+  benchmarks        Benchmark[]
+  builds            Build[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([developer])
+}
+
+model ModelQuantization {
+  id                String   @id @default(cuid())
+  modelId           String
+  model             AIModel  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  quantizationType  String
+  vramRequired      Int
+  ramRequired       Int?
+  isEstimated       Boolean  @default(false)
+  confidence        String
+  
+  source            String?
+  sourceUrl         String?
+  retrievedAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([modelId, quantizationType])
+  @@index([modelId])
+}
+
+model GPU {
+  id                String   @id @default(cuid())
+  manufacturer      String
+  model             String
+  slug              String   @unique
+  
+  vram              Int
+  memoryType        String?
+  memoryBandwidth   Int?
+  tdp               Int?
+  architecture      String?
+  
+  cudaCores         Int?
+  tensorCores       Int?
+  
+  fp16Performance   Float?
+  fp8Performance    Float?
+  
+  msrp              Decimal? @db.Decimal(10, 2)
+  releaseDate       DateTime?
+  
+  pcieVersion       String?
+  pcieSlots         Int      @default(2)
+  powerConnectors   String?
+  length            Int?
+  height            Int?
+  width             Int?
+  
+  benchmarks        Benchmark[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([manufacturer])
+}
+
+model CPU {
+  id                String   @id @default(cuid())
+  manufacturer      String
+  model             String
+  slug              String   @unique
+  
+  cores             Int
+  threads           Int
+  baseClock         Float
+  boostClock        Float?
+  socket            String
+  pcieLanes         Int
+  tdp               Int
+  
+  ramType           String[]
+  maxRam            Int
+  
+  msrp              Decimal? @db.Decimal(10, 2)
+  releaseDate       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([socket])
+}
+
+model Motherboard {
+  id                String   @id @default(cuid())
+  manufacturer      String
+  model             String
+  slug              String   @unique
+  
+  socket            String
+  chipset           String
+  formFactor        String
+  
+  pcieSlots         Json
+  maxGpus           Int
+  
+  ramType           String
+  ramSlots          Int
+  maxRam            Int
+  
+  m2Slots           Int
+  sataSlots         Int
+  
+  hasWifi           Boolean  @default(false)
+  hasEthernet       String?
+  
+  msrp              Decimal? @db.Decimal(10, 2)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([socket])
+}
+
+model PSU {
+  id                String   @id @default(cuid())
+  manufacturer      String
+  model             String
+  slug              String   @unique
+  
+  wattage           Int
+  efficiency        String
+  modular           String
+  formFactor        String
+  
+  pcie5Connectors   Int      @default(0)
+  pcie4Connectors   Int      @default(0)
+  
+  msrp              Decimal? @db.Decimal(10, 2)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([wattage])
+}
+
+model RAM {
+  id                String   @id @default(cuid())
+  manufacturer      String
+  model             String
+  slug              String   @unique
+  
+  capacity          Int
+  ddrGeneration     String
+  speed             Int
+  modules           Int
+  ecc               Boolean  @default(false)
+  
+  msrp              Decimal? @db.Decimal(10, 2)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([ddrGeneration])
+}
+
+model Storage {
+  id                String   @id @default(cuid())
+  manufacturer      String
+  model             String
+  slug              String   @unique
+  
+  capacity          Int
+  interface         String
+  formFactor        String
+  readSpeed         Int?
+  writeSpeed        Int?
+  
+  msrp              Decimal? @db.Decimal(10, 2)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+}
+
+model Benchmark {
+  id                String   @id @default(cuid())
+  
+  modelId           String
+  model             AIModel  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
+  gpuId             String
+  gpu               GPU      @relation(fields: [gpuId], references: [id], onDelete: Cascade)
+  
+  quantization      String
+  runtime           String?
+  contextLength     Int?
+  batchSize         Int?
+  
+  tokensPerSecond   Float?
+  promptSpeed       Float?
+  generationSpeed   Float?
+  
+  powerDraw         Int?
+  
+  source            String
+  sourceUrl         String?
+  benchmarkDate     DateTime?
+  
+  isEstimated       Boolean  @default(false)
+  confidence        String
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([modelId, gpuId, quantization])
+  @@index([modelId])
+  @@index([gpuId])
+}
+
+model Retailer {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  country           String
+  url               String
+  logoUrl           String?
+  
+  hasAffiliateProgram Boolean @default(false)
+  affiliateNetwork    String?
+  
+  shippingInfo      String?
+  returnsInfo       String?
+  
+  prices            Price[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([country])
+}
+
+model Price {
+  id                String   @id @default(cuid())
+  
+  retailerId        String
+  retailer          Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  
+  productType       String
+  productId         String
+  
+  sku               String?
+  productUrl        String
+  affiliateUrl      String?
+  
+  price             Decimal  @db.Decimal(10, 2)
+  currency          String
+  
+  inStock           Boolean  @default(true)
+  shippingCost      Decimal? @db.Decimal(10, 2)
+  taxes             Decimal? @db.Decimal(10, 2)
+  
+  discount          Decimal? @db.Decimal(10, 2)
+  couponCode        String?
+  
+  priceHistory      PriceHistory[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([retailerId, productType, productId])
+  @@index([productType, productId])
+  @@index([retailerId])
+}
+
+model PriceHistory {
+  id                String   @id @default(cuid())
+  
+  priceId           String
+  price             Price    @relation(fields: [priceId], references: [id], onDelete: Cascade)
+  
+  priceValue        Decimal  @db.Decimal(10, 2)
+  inStock           Boolean
+  
+  recordedAt        DateTime @default(now())
+  
+  @@index([priceId, recordedAt])
+}
+
+model Build {
+  id                String   @id @default(cuid())
+  userId            String?
+  
+  name              String?
+  slug              String   @unique
+  
+  modelId           String?
+  targetModel       AIModel? @relation(fields: [modelId], references: [id])
+  
+  budget            Decimal? @db.Decimal(10, 2)
+  currency          String   @default("USD")
+  priority          String
+  
+  components        BuildComponent[]
+  
+  totalCost         Decimal  @db.Decimal(10, 2)
+  estimatedVram     Int?
+  estimatedPerformance Float?
+  estimatedPower    Int?
+  
+  isPublic          Boolean  @default(true)
+  viewCount         Int      @default(0)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([slug])
+  @@index([userId])
+  @@index([modelId])
+}
+
+model BuildComponent {
+  id                String   @id @default(cuid())
+  
+  buildId           String
+  build             Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  
+  componentType     String
+  componentId       String
+  
+  quantity          Int      @default(1)
+  price             Decimal  @db.Decimal(10, 2)
+  
+  retailerId        String?
+  purchaseUrl       String?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([buildId])
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String?
+  
+  country           String?
+  currency          String   @default("USD")
+  
+  priceAlerts       PriceAlert[]
+  savedBuilds       String[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([email])
+}
+
+model PriceAlert {
+  id                String   @id @default(cuid())
+  
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  productType       String
+  productId         String
+  
+  targetPrice       Decimal  @db.Decimal(10, 2)
+  currency          String
+  
+  isActive          Boolean  @default(true)
+  triggered         Boolean  @default(false)
+  triggeredAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([userId])
+  @@index([productType, productId])
+}
+
+model DataSource {
+  id                String   @id @default(cuid())
+  name              String
+  type              String
+  url               String?
+  lastSync          DateTime?
+  status            String
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Country {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String
+  currency          String
+  isActive          Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([code])
+}
